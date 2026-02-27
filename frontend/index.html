@@ -172,26 +172,22 @@
         /* Logo 徽章 - 覆盖瑕疵 */
         .logo-badge {
             position: absolute;
-            right: 2.5%;
-            bottom: 9%;
+            right: 5%;
+            bottom: 6%;
+            width: 32px;
+            height: 32px;
             background: rgba(20, 15, 25, 0.95);
             border: 2px solid #d4a44a;
-            border-radius: 8px;
-            padding: 5px 10px;
+            border-radius: 6px;
             z-index: 5;
             display: flex;
             align-items: center;
-            gap: 5px;
-            font-size: 10px;
-            color: #d4a44a;
+            justify-content: center;
+            font-size: 12px;
             font-weight: bold;
+            color: #d4a44a;
             box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
-
-        .logo-badge img {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
+            cursor: default;
         }
 
         /* 水豚精灵 */
@@ -399,10 +395,7 @@
         <div id="areas-container"></div>
 
         <!-- Logo 徽章 -->
-        <div class="logo-badge">
-            <span>Powered by</span>
-            <span style="color: #4ecdc4;">HappyCapy</span>
-        </div>
+        <div class="logo-badge" title="HappyCapy">HC</div>
 
         <!-- 水豚 -->
         <div class="capybara" id="capybara">
