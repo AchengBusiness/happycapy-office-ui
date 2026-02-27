@@ -169,6 +169,31 @@
             opacity: 1;
         }
 
+        /* Logo 徽章 - 覆盖瑕疵 */
+        .logo-badge {
+            position: absolute;
+            right: 2.5%;
+            bottom: 9%;
+            background: rgba(20, 15, 25, 0.95);
+            border: 2px solid #d4a44a;
+            border-radius: 8px;
+            padding: 5px 10px;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: #d4a44a;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .logo-badge img {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
         /* 水豚精灵 */
         .capybara {
             position: absolute;
@@ -372,6 +397,12 @@
 
         <!-- 交互区域将由JS动态创建 -->
         <div id="areas-container"></div>
+
+        <!-- Logo 徽章 -->
+        <div class="logo-badge">
+            <span>Powered by</span>
+            <span style="color: #4ecdc4;">HappyCapy</span>
+        </div>
 
         <!-- 水豚 -->
         <div class="capybara" id="capybara">
