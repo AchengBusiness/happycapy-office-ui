@@ -77,7 +77,9 @@
         const TYPEWRITER_DELAY = 50;
 
         function preload() {
-            this.load.image('office_bg', '/static/office_bg.png');
+            // 添加时间戳强制刷新图片缓存
+            const timestamp = Date.now();
+            this.load.image('office_bg', `/static/office_bg.png?v=${timestamp}`);
             this.load.image('capy_open', '/static/capybara_open.png');
             this.load.image('capy_closed', '/static/capybara_closed.png');
         }
