@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HappyCapy Office - CAD View | Real-time Status</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 25px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #27ae60;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #game-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 30px;
+        }
+
+        canvas {
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .info-panel {
+            background: #ecf0f1;
+            padding: 25px 40px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .info-card h3 {
+            color: #2c3e50;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-card p {
+            color: #7f8c8d;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .activity-detail {
+            color: #3498db !important;
+            font-weight: 500;
+        }
+
+        #status-text {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.95);
+            padding: 15px 30px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 16px;
+            color: #2c3e50;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            border: 2px solid #ecf0f1;
+        }
+
+        .footer {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px 40px;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 12px;
+            z-index: 10;
+        }
+
+        .legend h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>
+                <span>🏢</span>
+                HappyCapy Office - CAD Floor Plan
+            </h1>
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span>Live Status</span>
+            </div>
+        </div>
+
+        <div id="game-container">
+            <div id="status-text">初始化中...</div>
+        </div>
+
+        <div class="info-panel">
+            <div class="info-card">
+                <h3>📍 Current Location</h3>
+                <p id="location-text">Loading...</p>
+            </div>
+            <div class="info-card">
+                <h3>⚡ Current Activity</h3>
+                <p id="activity-text" class="activity-detail">Loading...</p>
+            </div>
+            <div class="info-card">
+                <h3>🕐 Last Update</h3>
+                <p id="time-text">--:--:--</p>
+            </div>
+            <div class="info-card">
+                <h3>📊 Status</h3>
+                <p id="state-text">Loading...</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            Real-time AI Assistant Status Visualization | CAD-style Office Floor Plan | Powered by Claude
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 1200,
+            height: 800,
+            parent: 'game-container',
+            backgroundColor: '#f8f9fa',
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            },
+            scene: { preload: preload, create: create, update: update }
+        };
+
+        const game = new Phaser.Game(config);
+
+        let capybara;
+        let statusText;
+        let bubble;
+        let bubbleText;
+        let areas;
+        let lastState = null;
+
+        function preload() {
+            const timestamp = Date.now();
+            this.load.image('office_cad', `/static/office_cad.png?v=${timestamp}`);
+            this.load.image('capy_open', `/static/capybara_open.png?v=${timestamp}`);
+            this.load.image('capy_closed', `/static/capybara_closed.png?v=${timestamp}`);
+        }
+
+        function create() {
+            // 背景
+            this.add.image(600, 400, 'office_cad');
+
+            // 区域定义（CAD 平面图坐标）
+            areas = {
+                workdesk: { x: 210, y: 230, name: 'Work Area' },          // 主办公桌
+                devzone: { x: 210, y: 480, name: 'Dev Zone' },            // 开发区
+                lounge: { x: 225, y: 600, name: 'Lounge' },               // 休息区
+                meeting: { x: 550, y: 500, name: 'Meeting Room' },        // 会议室
+                server: { x: 950, y: 225, name: 'Server Room' },          // 服务器机房
+                library: { x: 1060, y: 525, name: 'Library' },            // 图书区
+                idle: { x: 225, y: 600, name: 'Lounge' }                  // 待命位置
+            };
+
+            // 水豚角色
+            capybara = this.physics.add.sprite(225, 600, 'capy_open');
+            capybara.setScale(1.2);
+
+            // 眨眼动画
+            this.time.addEvent({
+                delay: 3000,
+                callback: () => {
+                    capybara.setTexture('capy_closed');
+                    this.time.delayedCall(150, () => {
+                        capybara.setTexture('capy_open');
+                    });
+                },
+                loop: true
+            });
+
+            // 对话气泡
+            bubble = this.add.graphics();
+            bubbleText = this.add.text(0, 0, '', {
+                fontSize: '16px',
+                fontFamily: 'Arial',
+                color: '#2c3e50',
+                align: 'center',
+                wordWrap: { width: 280 }
+            });
+            bubbleText.setOrigin(0.5, 1);
+
+            // 状态文本
+            statusText = document.getElementById('status-text');
+
+            // 开始轮询
+            pollStatus.call(this);
+            this.time.addEvent({
+                delay: 2000,
+                callback: pollStatus,
+                callbackScope: this,
+                loop: true
+            });
+        }
+
+        function update() {
+            // 可以添加更新逻辑
+        }
+
+        function pollStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (JSON.stringify(data) !== lastState) {
+                        lastState = JSON.stringify(data);
+                        updateUI(data);
+                    }
+                })
+                .catch(error => console.error('Status fetch error:', error));
+        }
+
+        function updateUI(data) {
+            const state = data.state || 'idle';
+            const detail = data.detail || '待命中';
+            const action = data.action || '';
+
+            // 状态到区域的映射
+            const stateToArea = {
+                'writing': 'workdesk',
+                'researching': 'devzone',
+                'executing': 'server',
+                'syncing': 'library',
+                'error': 'lounge',
+                'idle': 'idle'
+            };
+
+            const targetArea = areas[stateToArea[state]] || areas.idle;
+
+            // 移动水豚
+            if (capybara) {
+                game.scene.scenes[0].tweens.add({
+                    targets: capybara,
+                    x: targetArea.x,
+                    y: targetArea.y,
+                    duration: 1500,
+                    ease: 'Power2'
+                });
+            }
+
+            // 更新对话气泡
+            updateBubble(detail, targetArea.x, targetArea.y);
+
+            // 更新信息面板
+            document.getElementById('location-text').textContent = targetArea.name;
+            document.getElementById('activity-text').textContent = detail;
+            document.getElementById('state-text').textContent = getStateEmoji(state) + ' ' + getStateName(state);
+
+            if (data.updated_at) {
+                const time = new Date(data.updated_at);
+                document.getElementById('time-text').textContent = time.toLocaleTimeString('zh-CN');
+            }
+
+            statusText.textContent = `${getStateEmoji(state)} ${detail}`;
+        }
+
+        function updateBubble(text, x, y) {
+            bubble.clear();
+
+            if (!text) return;
+
+            bubbleText.setText(text);
+            bubbleText.setPosition(x, y - 50);
+
+            const bounds = bubbleText.getBounds();
+            const padding = 15;
+            const bubbleWidth = bounds.width + padding * 2;
+            const bubbleHeight = bounds.height + padding * 2;
+            const bubbleX = x - bubbleWidth / 2;
+            const bubbleY = y - 50 - bubbleHeight;
+
+            // 气泡背景
+            bubble.fillStyle(0xffffff, 0.95);
+            bubble.fillRoundedRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 10);
+            bubble.lineStyle(2, 0x2c3e50, 1);
+            bubble.strokeRoundedRect(bubbleX, bubbleY, bubbleWidth, bubbleHeight, 10);
+
+            // 小三角
+            bubble.fillStyle(0xffffff, 0.95);
+            bubble.fillTriangle(
+                x - 10, bubbleY + bubbleHeight,
+                x + 10, bubbleY + bubbleHeight,
+                x, bubbleY + bubbleHeight + 10
+            );
+        }
+
+        function getStateEmoji(state) {
+            const emojis = {
+                'idle': '😊',
+                'writing': '✍️',
+                'researching': '🔍',
+                'executing': '⚡',
+                'syncing': '🔄',
+                'error': '❌'
+            };
+            return emojis[state] || '🤖';
+        }
+
+        function getStateName(state) {
+            const names = {
+                'idle': 'Idle',
+                'writing': 'Writing',
+                'researching': 'Researching',
+                'executing': 'Executing',
+                'syncing': 'Syncing',
+                'error': 'Error'
+            };
+            return names[state] || 'Unknown';
+        }
+    </script>
+</body>
+</html>

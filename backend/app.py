@@ -90,6 +90,12 @@ def index():
     return send_from_directory(FRONTEND_DIR, "index.html")
 
 
+@app.route("/cad", methods=["GET"])
+def cad_view():
+    """Serve the CAD floor plan UI"""
+    return send_from_directory(FRONTEND_DIR, "index_cad.html")
+
+
 @app.route("/status", methods=["GET"])
 def get_status():
     """Get current state"""
