@@ -192,17 +192,8 @@ for x in [250, 500, 700]:
     draw.ellipse([x-25, 150, x+25, 175], outline='#fff9e6', width=1)
     draw.ellipse([x-35, 145, x+35, 180], outline='#fff9e6', width=1)
 
-# === 地毯（装饰）===
-# 办公桌前的小地毯
-draw.ellipse([200, 380, 350, 450], fill='#8B4B3D', outline='#6d3a2f', width=2)
-# 花纹
-for r in [15, 25, 35]:
-    draw.ellipse([275-r, 415-r//2, 275+r, 415+r//2], outline='#a0564a', width=1)
-
-# 沙发区的地毯
-draw.ellipse([580, 480, 720, 560], fill='#5a4a6a', outline='#4a3a5a', width=2)
-for r in [12, 22]:
-    draw.ellipse([650-r, 520-r//2, 650+r, 520+r//2], outline='#7a6a8a', width=1)
+# === 地毯已移除 ===
+# 用户反馈：地毯太丑，已删除以保持简洁风格
 
 # === 墙面装饰 ===
 # 公司logo/标识牌
