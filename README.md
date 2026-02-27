@@ -30,6 +30,7 @@ A 3D-style virtual office that visualizes AI assistant working status in real-ti
 | Demo Mode | No | One-click demo |
 | Statistics | No | Real-time stats panel |
 | Installation | Manual | One-click install |
+| Auto Status | No | Hooks integration |
 
 ### Features
 
@@ -102,6 +103,23 @@ cp -r skill/* ~/.claude/skills/office-status-ui/
 /office
 ```
 
+### Auto Status Hooks (Optional)
+
+Enable automatic status updates based on Claude's tool usage:
+
+```bash
+./install_hooks.sh
+```
+
+This maps Claude's tools to office areas:
+| Tool | Status | Area |
+|------|--------|------|
+| Read | reading | Library |
+| Grep/Glob | searching | Library |
+| Write/Edit | writing/editing | Desk |
+| Bash | executing | Server Room |
+| Task | thinking | Library |
+
 ### API Endpoints
 
 | Endpoint | Method | Description |
@@ -121,9 +139,12 @@ happycapy-office-ui/
 │   ├── index.html       # Main UI (v2)
 │   ├── index_cad.html   # CAD-style UI
 │   └── office_bg.png    # 3D background
+├── hooks/
+│   └── status_hooks.sh  # Auto status update hooks
 ├── skill/               # Claude Code skill
 ├── update_status.sh     # Status update script
 ├── install.sh           # One-click installer
+├── install_hooks.sh     # Hooks installer
 └── state.json           # Runtime state
 ```
 
@@ -145,6 +166,7 @@ happycapy-office-ui/
 | 演示模式 | 无 | 一键演示 |
 | 工作统计 | 无 | 实时统计面板 |
 | 一键安装 | 无 | install.sh |
+| 自动状态 | 无 | Hooks 集成 |
 
 ### 功能特性
 
