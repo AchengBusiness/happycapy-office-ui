@@ -170,10 +170,48 @@ areas = {
 python create_luxury_background.py
 ```
 
+## 🚀 集成技能
+
+本项目集成了来自 [Happycapy-skills](https://github.com/happycapy-ai/Happycapy-skills) 的 8 个高质量 Claude Code 技能：
+
+### 🎨 创意设计
+- **3d-web-experience** - Three.js/WebGL 3D 网页体验
+- **canvas-design** - 海报和视觉艺术设计
+- **frontend-slides** - HTML 演示文稿制作
+
+### 🎬 媒体创作
+- **ai-image-generation** - AI 图像生成（FLUX、Gemini 等 50+ 模型）
+- **image-enhancer** - 图像质量增强
+
+### 📄 文档处理
+- **pdf** - 全面的 PDF 操作工具包
+- **data-storytelling** - 数据可视化叙事
+
+### 🛠️ 实用工具
+- **weather** - 天气查询（无需 API 密钥）
+
+**查看详情:** [skills/README.md](skills/README.md)
+
+### 使用技能
+
+```bash
+# 安装技能到 Claude Code
+cp -r skills/* ~/.claude/skills/
+
+# 使用技能（示例）
+/ai-image-generation   # 生成 AI 图像
+/pdf                   # PDF 处理
+/weather               # 查询天气
+```
+
 ## License
 
 MIT
 
 ---
 
-基于 [Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) 修改
+**基于项目:**
+- [Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) - 原始办公室 UI
+- [Happycapy-skills](https://github.com/happycapy-ai/Happycapy-skills) - 技能集合
+
+**仓库:** https://github.com/acheng-byte/happycapy-office-ui
