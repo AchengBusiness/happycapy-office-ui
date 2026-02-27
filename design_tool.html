@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HappyCapy Office UI - 可视化设计工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .panel {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .panel h2 {
+            margin-bottom: 15px;
+            color: #667eea;
+            font-size: 1.3em;
+        }
+
+        .canvas-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #designCanvas {
+            border: 3px solid #667eea;
+            border-radius: 8px;
+            cursor: crosshair;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .color-picker {
+            margin: 15px 0;
+        }
+
+        .color-picker label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .color-input {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .color-input input[type="color"] {
+            width: 60px;
+            height: 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .color-input input[type="text"] {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-family: monospace;
+        }
+
+        .furniture-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .furniture-btn {
+            padding: 12px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9em;
+            text-align: center;
+        }
+
+        .furniture-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .furniture-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+        }
+
+        .coordinates {
+            margin: 15px 0;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        .coordinates div {
+            margin: 5px 0;
+        }
+
+        .area-marker {
+            padding: 8px 12px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .area-marker:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .area-marker.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .code-output {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .info-box {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .canvas-info {
+            text-align: center;
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Office UI 可视化设计工具</h1>
+            <p class="subtitle">点击画布设置互动区域坐标 | 选择颜色和家具 | 导出配置代码</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 左侧面板：颜色配置 -->
+            <div class="panel">
+                <h2>🎨 颜色方案</h2>
+
+                <div class="color-picker">
+                    <label>地板颜色</label>
+                    <div class="color-input">
+                        <input type="color" id="floorColor" value="#3a3a52">
+                        <input type="text" id="floorColorText" value="#3a3a52" readonly>
+                    </div>
+                </div>
+
+                <div class="color-picker">
+                    <label>墙壁颜色</label>
+                    <div class="color-input">
+                        <input type="color" id="wallColor" value="#252538">
+                        <input type="text" id="wallColorText" value="#252538" readonly>
+                    </div>
+                </div>
+
+                <div class="color-picker">
+                    <label>桌子颜色</label>
+                    <div class="color-input">
+                        <input type="color" id="deskColor" value="#8B6F47">
+                        <input type="text" id="deskColorText" value="#8B6F47" readonly>
+                    </div>
+                </div>
+
+                <div class="color-picker">
+                    <label>科技蓝色</label>
+                    <div class="color-input">
+                        <input type="color" id="techColor" value="#4a9eff">
+                        <input type="text" id="techColorText" value="#4a9eff" readonly>
+                    </div>
+                </div>
+
+                <div class="color-picker">
+                    <label>植物绿色</label>
+                    <div class="color-input">
+                        <input type="color" id="plantColor" value="#4a9e5f">
+                        <input type="text" id="plantColorText" value="#4a9e5f" readonly>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" onclick="applyColors()">应用颜色</button>
+                <button class="btn btn-secondary" onclick="resetColors()">重置</button>
+
+                <div class="info-box">
+                    <strong>提示：</strong> 选择颜色后点击"应用颜色"生成 Python 代码
+                </div>
+            </div>
+
+            <!-- 中间：画布 -->
+            <div class="canvas-container">
+                <canvas id="designCanvas" width="800" height="600"></canvas>
+                <div class="canvas-info">
+                    <strong>画布尺寸：</strong> 800 × 600 像素<br>
+                    点击画布标记互动区域位置
+                </div>
+                <div>
+                    <button class="btn" onclick="clearMarkers()">清除所有标记</button>
+                    <button class="btn btn-secondary" onclick="loadBackground()">加载背景图</button>
+                    <button class="btn btn-success" onclick="exportConfig()">导出配置</button>
+                </div>
+            </div>
+
+            <!-- 右侧面板：区域配置 -->
+            <div class="panel">
+                <h2>📍 互动区域</h2>
+
+                <p style="margin-bottom: 15px; color: #666;">点击画布设置区域位置</p>
+
+                <div class="area-marker" data-area="workdesk" onclick="selectArea('workdesk')">
+                    💼 工作桌区<br>
+                    <span id="workdesk-coords">未设置</span>
+                </div>
+
+                <div class="area-marker" data-area="breakroom" onclick="selectArea('breakroom')">
+                    ☕ 休息区<br>
+                    <span id="breakroom-coords">未设置</span>
+                </div>
+
+                <div class="area-marker" data-area="meeting" onclick="selectArea('meeting')">
+                    👥 会议区<br>
+                    <span id="meeting-coords">未设置</span>
+                </div>
+
+                <div class="area-marker" data-area="server" onclick="selectArea('server')">
+                    🖥️ 服务器区<br>
+                    <span id="server-coords">未设置</span>
+                </div>
+
+                <div class="area-marker" data-area="custom" onclick="selectArea('custom')">
+                    ⭐ 自定义区<br>
+                    <span id="custom-coords">未设置</span>
+                </div>
+
+                <h2 style="margin-top: 25px;">🪑 家具元素</h2>
+
+                <div class="furniture-grid">
+                    <button class="furniture-btn" onclick="addFurniture('desk')">🪑 办公桌</button>
+                    <button class="furniture-btn" onclick="addFurniture('sofa')">🛋️ 沙发</button>
+                    <button class="furniture-btn" onclick="addFurniture('table')">🍽️ 桌子</button>
+                    <button class="furniture-btn" onclick="addFurniture('plant')">🪴 植物</button>
+                    <button class="furniture-btn" onclick="addFurniture('server')">🖥️ 服务器</button>
+                    <button class="furniture-btn" onclick="addFurniture('window')">🪟 窗户</button>
+                </div>
+
+                <div class="info-box" style="margin-top: 20px;">
+                    <strong>当前选择：</strong> <span id="currentSelection">未选择</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('designCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let markers = {};
+        let currentArea = null;
+        let backgroundImage = null;
+
+        // 初始化画布
+        function initCanvas() {
+            ctx.fillStyle = '#3a3a52';
+            ctx.fillRect(0, 0, 800, 600);
+
+            // 绘制网格
+            ctx.strokeStyle = '#4a4a62';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= 800; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 600);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= 600; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(800, y);
+                ctx.stroke();
+            }
+        }
+
+        // 画布点击事件
+        canvas.addEventListener('click', (e) => {
+            if (!currentArea) {
+                alert('请先选择一个区域！');
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+
+            markers[currentArea] = { x, y };
+            updateAreaDisplay(currentArea, x, y);
+            drawMarkers();
+        });
+
+        // 绘制标记
+        function drawMarkers() {
+            // 重新绘制背景
+            if (backgroundImage) {
+                ctx.drawImage(backgroundImage, 0, 0);
+            } else {
+                initCanvas();
+            }
+
+            // 绘制所有标记
+            for (const [area, pos] of Object.entries(markers)) {
+                ctx.fillStyle = 'rgba(102, 126, 234, 0.5)';
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // 标签
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(getAreaName(area), pos.x, pos.y + 40);
+            }
+        }
+
+        function getAreaName(area) {
+            const names = {
+                'workdesk': '💼工作',
+                'breakroom': '☕休息',
+                'meeting': '👥会议',
+                'server': '🖥️服务器',
+                'custom': '⭐自定义'
+            };
+            return names[area] || area;
+        }
+
+        function selectArea(area) {
+            currentArea = area;
+            document.querySelectorAll('.area-marker').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelector(`[data-area="${area}"]`).classList.add('selected');
+            document.getElementById('currentSelection').textContent = getAreaName(area);
+        }
+
+        function updateAreaDisplay(area, x, y) {
+            document.getElementById(`${area}-coords`).textContent = `x: ${x}, y: ${y}`;
+        }
+
+        function clearMarkers() {
+            markers = {};
+            currentArea = null;
+            document.querySelectorAll('.area-marker span').forEach(el => {
+                el.textContent = '未设置';
+            });
+            document.querySelectorAll('.area-marker').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.getElementById('currentSelection').textContent = '未选择';
+            drawMarkers();
+        }
+
+        function loadBackground() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        backgroundImage = img;
+                        drawMarkers();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function addFurniture(type) {
+            alert(`家具 "${type}" 已添加到设计（功能开发中）`);
+        }
+
+        // 颜色选择器更新
+        ['floor', 'wall', 'desk', 'tech', 'plant'].forEach(type => {
+            const colorInput = document.getElementById(`${type}Color`);
+            const textInput = document.getElementById(`${type}ColorText`);
+
+            colorInput.addEventListener('input', (e) => {
+                textInput.value = e.target.value;
+            });
+        });
+
+        function applyColors() {
+            alert('颜色配置已更新！查看导出代码获取 Python 配置。');
+        }
+
+        function resetColors() {
+            document.getElementById('floorColor').value = '#3a3a52';
+            document.getElementById('wallColor').value = '#252538';
+            document.getElementById('deskColor').value = '#8B6F47';
+            document.getElementById('techColor').value = '#4a9eff';
+            document.getElementById('plantColor').value = '#4a9e5f';
+
+            ['floor', 'wall', 'desk', 'tech', 'plant'].forEach(type => {
+                const val = document.getElementById(`${type}Color`).value;
+                document.getElementById(`${type}ColorText`).value = val;
+            });
+
+            initCanvas();
+        }
+
+        function exportConfig() {
+            const config = {
+                colors: {
+                    floor: document.getElementById('floorColor').value,
+                    wall: document.getElementById('wallColor').value,
+                    desk: document.getElementById('deskColor').value,
+                    tech: document.getElementById('techColor').value,
+                    plant: document.getElementById('plantColor').value
+                },
+                areas: markers
+            };
+
+            // 生成 JavaScript 代码
+            const jsCode = `// 复制到 frontend/index.html 的 create() 函数中\nareas = {\n${Object.entries(markers).map(([area, pos]) =>
+                `    ${area}: { x: ${pos.x}, y: ${pos.y} }`
+            ).join(',\n')}\n};`;
+
+            // 生成 Python 代码
+            const pyCode = `# 复制到 create_isometric_office.py\n# 颜色配置\nfloor_base = '${config.colors.floor}'\nwall_color = '${config.colors.wall}'\ndesk_wood = '${config.colors.desk}'\ntech_blue = '${config.colors.tech}'\nplant_green = '${config.colors.plant}'`;
+
+            // 显示导出对话框
+            const exportWindow = window.open('', 'Export', 'width=700,height=600');
+            exportWindow.document.write(`
+                <html>
+                <head>
+                    <title>导出配置</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
+                        h2 { color: #667eea; }
+                        .code-block { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 8px; margin: 15px 0; overflow-x: auto; }
+                        pre { margin: 0; white-space: pre-wrap; }
+                        button { padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 10px 5px 0 0; }
+                        button:hover { background: #5568d3; }
+                    </style>
+                </head>
+                <body>
+                    <h1>🎨 配置导出</h1>
+
+                    <h2>📍 JavaScript 配置（用于 index.html）</h2>
+                    <div class="code-block">
+                        <pre id="jsCode">${jsCode}</pre>
+                    </div>
+                    <button onclick="copyCode('jsCode')">复制 JS 代码</button>
+
+                    <h2>🎨 Python 配置（用于 create_isometric_office.py）</h2>
+                    <div class="code-block">
+                        <pre id="pyCode">${pyCode}</pre>
+                    </div>
+                    <button onclick="copyCode('pyCode')">复制 Python 代码</button>
+
+                    <h2>📦 JSON 配置</h2>
+                    <div class="code-block">
+                        <pre>${JSON.stringify(config, null, 2)}</pre>
+                    </div>
+
+                    <script>
+                        function copyCode(id) {
+                            const text = document.getElementById(id).textContent;
+                            navigator.clipboard.writeText(text).then(() => {
+                                alert('代码已复制到剪贴板！');
+                            });
+                        }
+                    </script>
+                </body>
+                </html>
+            `);
+        }
+
+        // 初始化
+        initCanvas();
+    </script>
+</body>
+</html>
