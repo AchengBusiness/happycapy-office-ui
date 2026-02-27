@@ -55,9 +55,9 @@
         const STATES = {
             idle: { name: '待命', area: 'breakroom' },
             writing: { name: '整理文档', area: 'workdesk' },
-            researching: { name: '搜索信息', area: 'workdesk' },
-            executing: { name: '执行任务', area: 'workdesk' },
-            syncing: { name: '同步备份', area: 'breakroom' },
+            researching: { name: '搜索信息', area: 'library' },
+            executing: { name: '执行任务', area: 'server' },
+            syncing: { name: '同步备份', area: 'library' },
             error: { name: '出错了', area: 'breakroom' }
         };
 
@@ -70,152 +70,277 @@
             error: ['哎呀...', '遇到问题了', '让我看看', '马上解决']
         };
 
-        let game, capy, areas = {}, currentState = 'idle', statusText, lastFetch = 0, lastBlink = 0, lastBubble = 0, targetX = 705, targetY = 495, bubble = null, typewriterText = '', typewriterTarget = '', typewriterIndex = 0, lastTypewriter = 0;
+        // 状态变量
+        let gameInstance = null;
+        let capy = null;
+        let areas = {};
+        let currentState = 'idle';
+        let currentDetail = '';
+        let statusText = null;
+        let targetX = 150;
+        let targetY = 500;
+
+        // 气泡相关
+        let bubble = null;
+        let bubbleTimer = null;
+
+        // 眨眼相关
+        let blinkTimer = null;
+        let isBlinking = false;
+
+        // 打字机效果
+        let typewriterText = '';
+        let typewriterTarget = '';
+        let typewriterIndex = 0;
+
+        // 时间控制
+        let lastFetch = 0;
+        let lastBubble = 0;
+        let lastTypewriter = 0;
+
+        // 并发控制
+        let isFetching = false;
+
+        // 常量
         const FETCH_INTERVAL = 2000;
         const BLINK_INTERVAL = 2500;
         const BUBBLE_INTERVAL = 8000;
         const TYPEWRITER_DELAY = 50;
 
         function preload() {
-            // 添加时间戳强制刷新图片缓存
             const timestamp = Date.now();
             this.load.image('office_bg', `/static/office_bg.png?v=${timestamp}`);
-            this.load.image('capy_open', '/static/capybara_open.png');
-            this.load.image('capy_closed', '/static/capybara_closed.png');
+            this.load.image('capy_open', `/static/capybara_open.png?v=${timestamp}`);
+            this.load.image('capy_closed', `/static/capybara_closed.png?v=${timestamp}`);
         }
 
         function create() {
-            game = this;
+            gameInstance = this;
             this.add.image(400, 300, 'office_bg');
+
             areas = {
-                workdesk: { x: 285, y: 350 },    // 豪华办公桌区域
-                breakroom: { x: 705, y: 495 },   // 休息沙发区
-                meeting: { x: 450, y: 220 },      // 会议桌区域
-                server: { x: 720, y: 230 },       // 服务器机柜区
-                alert: { x: 620, y: 490 }
+                workdesk: { x: 130, y: 235 },
+                breakroom: { x: 150, y: 500 },
+                meeting: { x: 420, y: 320 },
+                server: { x: 675, y: 220 },
+                library: { x: 680, y: 470 },
+                alert: { x: 150, y: 500 }
             };
 
-            // 创建完整全身水豚角色（从PNG文件加载）
-            capy = game.physics.add.sprite(705, 495, 'capy_open');
+            // 创建水豚角色
+            capy = this.physics.add.sprite(150, 500, 'capy_open');
             capy.setOrigin(0.5);
-            capy.setScale(1.2);  // 48x48图片，适当缩放
-            capy.setAlpha(0.95);
+            capy.setScale(1.2);
+            capy.setAlpha(1.0);
+            capy.setDepth(50);
 
-            // 豪华版牌匾：HappyCapy的办公室
-            const plaqueBg = game.add.rectangle(400, 570, 420, 45, 0x8B4513);
+            // 牌匾
+            const plaqueBg = this.add.rectangle(400, 570, 420, 45, 0x8B4513);
             plaqueBg.setStrokeStyle(4, 0xfbbf24);
-            const plaqueText = game.add.text(400, 570, 'HappyCapy 豪华办公套间', {
+            plaqueBg.setDepth(80);
+            const plaqueText = this.add.text(400, 570, 'HappyCapy 豪华办公套间', {
                 font: 'bold 18px monospace',
                 fill: '#fbbf24',
-                fontWeight: 'bold',
                 stroke: '#000',
                 strokeThickness: 3
-            }).setOrigin(0.5);
-            // 牌匾两边加装饰
-            game.add.text(205, 570, '✨', { font: '22px' }).setOrigin(0.5);
-            game.add.text(595, 570, '✨', { font: '22px' }).setOrigin(0.5);
+            }).setOrigin(0.5).setDepth(81);
 
             statusText = document.getElementById('status-text');
+
+            // 使用Phaser定时器进行眨眼（避免setTimeout泄漏）
+            this.time.addEvent({
+                delay: BLINK_INTERVAL,
+                callback: doBlink,
+                callbackScope: this,
+                loop: true
+            });
+
+            // 初始获取状态
             fetchStatus();
         }
 
         function update(time) {
-            if (time - lastFetch > FETCH_INTERVAL) { fetchStatus(); lastFetch = time; }
-
-            // 眨眼
-            if (time - lastBlink > BLINK_INTERVAL) {
-                capy.setTexture('capy_closed');
-                lastBlink = time;
-                setTimeout(() => { capy.setTexture('capy_open'); }, 150);
+            // 状态轮询（带并发控制）
+            if (time - lastFetch > FETCH_INTERVAL && !isFetching) {
+                fetchStatus();
+                lastFetch = time;
             }
 
-            // 冒气泡
+            // 定期气泡
             if (time - lastBubble > BUBBLE_INTERVAL) {
-                showBubble();
+                showBubble(currentState === 'idle' ? null : currentDetail);
                 lastBubble = time;
             }
 
             // 打字机效果
             if (typewriterIndex < typewriterTarget.length && time - lastTypewriter > TYPEWRITER_DELAY) {
                 typewriterText += typewriterTarget[typewriterIndex];
-                statusText.textContent = typewriterText;
+                if (statusText) {
+                    statusText.textContent = typewriterText;
+                }
                 typewriterIndex++;
                 lastTypewriter = time;
             }
 
-            // 移动 + 小踱步
+            // 移动水豚
             moveCapy(time);
+        }
+
+        function doBlink() {
+            if (!capy || isBlinking) return;
+            isBlinking = true;
+            capy.setTexture('capy_closed');
+
+            // 使用Phaser定时器恢复
+            if (gameInstance) {
+                gameInstance.time.delayedCall(150, () => {
+                    if (capy) {
+                        capy.setTexture('capy_open');
+                    }
+                    isBlinking = false;
+                });
+            }
         }
 
         function normalizeState(s) {
             if (!s) return 'idle';
-            if (s === 'working') return 'writing';
-            if (s === 'run' || s === 'running') return 'executing';
-            if (s === 'sync') return 'syncing';
-            if (s === 'research') return 'researching';
-            return s;
+            const stateMap = {
+                'working': 'writing',
+                'run': 'executing',
+                'running': 'executing',
+                'sync': 'syncing',
+                'research': 'researching'
+            };
+            return stateMap[s] || s;
         }
 
         function fetchStatus() {
-            fetch('/status')
-                .then(response => response.json())
+            if (isFetching) return;
+            isFetching = true;
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            fetch('/status', { signal: controller.signal })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
                 .then(data => {
+                    clearTimeout(timeoutId);
                     const nextState = normalizeState(data.state);
                     const stateInfo = STATES[nextState] || STATES.idle;
                     const changed = nextState !== currentState;
+                    const detailChanged = currentDetail !== (data.detail || '');
+
                     currentState = nextState;
-                    const nextLine = '[' + stateInfo.name + '] ' + (data.detail || '...');
-                    if (changed) {
+                    currentDetail = data.detail || '';
+
+                    if (changed || detailChanged) {
+                        const nextLine = '[' + stateInfo.name + '] ' + currentDetail;
                         typewriterTarget = nextLine;
                         typewriterText = '';
                         typewriterIndex = 0;
+
                         const targetArea = areas[stateInfo.area] || areas.breakroom;
                         targetX = targetArea.x + (Math.random() - 0.5) * 40;
                         targetY = targetArea.y + (Math.random() - 0.5) * 40;
-                    } else {
-                        if (!typewriterTarget || typewriterTarget !== nextLine) {
-                            typewriterTarget = nextLine;
-                            typewriterText = '';
-                            typewriterIndex = 0;
-                        }
+
+                        showBubble(currentDetail);
                     }
                 })
                 .catch(error => {
-                    typewriterTarget = '连接失败，正在重试...';
-                    typewriterText = '';
-                    typewriterIndex = 0;
+                    clearTimeout(timeoutId);
+                    if (error.name !== 'AbortError') {
+                        typewriterTarget = '连接失败，正在重试...';
+                        typewriterText = '';
+                        typewriterIndex = 0;
+                    }
+                })
+                .finally(() => {
+                    isFetching = false;
                 });
         }
 
         function moveCapy(time) {
+            if (!capy) return;
+
             const stateInfo = STATES[currentState] || STATES.idle;
             const baseTarget = areas[stateInfo.area] || areas.breakroom;
+
+            // 偶尔随机微调目标位置
             if (Math.random() < 0.005) {
                 targetX = baseTarget.x + (Math.random() - 0.5) * 40;
                 targetY = baseTarget.y + (Math.random() - 0.5) * 40;
             }
+
             const dx = targetX - capy.x;
             const dy = targetY - capy.y;
             const speed = 1.0;
-            const wobble = Math.sin(time / 200) * 0.6;
-            if (Math.abs(dx) > 3) capy.x += Math.sign(dx) * speed;
-            if (Math.abs(dy) > 3) capy.y += Math.sign(dy) * speed;
+
+            if (Math.abs(dx) > 3) {
+                capy.x += Math.sign(dx) * speed;
+            }
+            if (Math.abs(dy) > 3) {
+                capy.y += Math.sign(dy) * speed;
+            }
+
+            // 移动时的摇摆效果
             if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                capy.setY(capy.y + wobble);
+                const wobble = Math.sin(time / 200) * 0.6;
+                capy.y += wobble;
             }
         }
 
-        function showBubble() {
-            if (bubble) { bubble.destroy(); bubble = null; }
-            const texts = BUBBLE_TEXTS[currentState] || BUBBLE_TEXTS.idle;
-            const text = texts[Math.floor(Math.random() * texts.length)];
-            const bg = game.add.rectangle(capy.x, capy.y - 45, text.length * 10 + 20, 28, 0xffffff, 0.95);
-            bg.setStrokeStyle(2, 0x000000);
-            const txt = game.add.text(capy.x, capy.y - 45, text, { font: '12px monospace', fill: '#000', align: 'center' }).setOrigin(0.5);
-            bubble = game.add.container(0, 0, [bg, txt]);
+        function showBubble(customText) {
+            // 清理旧气泡
+            destroyBubble();
+
+            if (!gameInstance || !capy) return;
+
+            let text;
+            if (customText && customText.length > 0) {
+                text = customText.length > 20 ? customText.substring(0, 20) + '...' : customText;
+            } else {
+                const texts = BUBBLE_TEXTS[currentState] || BUBBLE_TEXTS.idle;
+                text = texts[Math.floor(Math.random() * texts.length)];
+            }
+
+            const bubbleWidth = Math.max(text.length * 9 + 30, 80);
+            const bubbleX = capy.x;
+            const bubbleY = capy.y - 55;
+
+            const bg = gameInstance.add.rectangle(bubbleX, bubbleY, bubbleWidth, 32, 0xffffff, 0.95);
+            bg.setStrokeStyle(2, 0x2c3e50);
+
+            const txt = gameInstance.add.text(bubbleX, bubbleY, text, {
+                font: 'bold 11px monospace',
+                fill: '#2c3e50',
+                align: 'center'
+            }).setOrigin(0.5);
+
+            bubble = gameInstance.add.container(0, 0, [bg, txt]);
             bubble.setDepth(100);
-            setTimeout(() => { if (bubble) { bubble.destroy(); bubble = null; } }, 3000);
+
+            // 使用Phaser定时器自动销毁
+            bubbleTimer = gameInstance.time.delayedCall(4000, destroyBubble);
         }
+
+        function destroyBubble() {
+            if (bubbleTimer) {
+                bubbleTimer.remove();
+                bubbleTimer = null;
+            }
+            if (bubble) {
+                bubble.destroy();
+                bubble = null;
+            }
+        }
+
+        // 页面卸载时清理
+        window.addEventListener('beforeunload', () => {
+            destroyBubble();
+        });
 
         new Phaser.Game(config);
     </script>
