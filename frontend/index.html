@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HappyCapy 的像素办公室</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+        }
+        #game-container {
+            border: 4px solid #fbbf24;
+            border-radius: 8px;
+            image-rendering: pixelated;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        #status-text {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 14px;
+            background: rgba(0,0,0,0.8);
+            padding: 12px 24px;
+            border-radius: 8px;
+            max-width: 90%;
+            text-align: center;
+            border: 2px solid #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    <div id="status-text">加载中...</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <script>
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            parent: 'game-container',
+            pixelArt: true,
+            physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+            scene: { preload: preload, create: create, update: update }
+        };
+
+        const STATES = {
+            idle: { name: '待命', area: 'breakroom' },
+            writing: { name: '整理文档', area: 'workdesk' },
+            researching: { name: '搜索信息', area: 'workdesk' },
+            executing: { name: '执行任务', area: 'workdesk' },
+            syncing: { name: '同步备份', area: 'breakroom' },
+            error: { name: '出错了', area: 'breakroom' }
+        };
+
+        const BUBBLE_TEXTS = {
+            idle: ['享受生活~', '水豚时间！', '放松一下', '泡个温泉吧'],
+            writing: ['认真记录中', '这个重要', '整理思绪', '笔记很关键'],
+            researching: ['查找资料', '发现新知识', '这个有趣', '深入研究中'],
+            executing: ['全力以赴！', '马上完成', '效率max', '任务进行中'],
+            syncing: ['备份数据', '安全第一', '云端同步', '保存进度'],
+            error: ['哎呀...', '遇到问题了', '让我看看', '马上解决']
+        };
+
+        let game, capy, areas = {}, currentState = 'idle', statusText, lastFetch = 0, lastBlink = 0, lastBubble = 0, targetX = 705, targetY = 495, bubble = null, typewriterText = '', typewriterTarget = '', typewriterIndex = 0, lastTypewriter = 0;
+        const FETCH_INTERVAL = 2000;
+        const BLINK_INTERVAL = 2500;
+        const BUBBLE_INTERVAL = 8000;
+        const TYPEWRITER_DELAY = 50;
+
+        function preload() {
+            this.load.image('office_bg', '/static/office_bg.png');
+            this.load.image('capy_open', '/static/capybara_open.png');
+            this.load.image('capy_closed', '/static/capybara_closed.png');
+        }
+
+        function create() {
+            game = this;
+            this.add.image(400, 300, 'office_bg');
+            areas = {
+                workdesk: { x: 285, y: 350 },    // 豪华办公桌区域
+                breakroom: { x: 705, y: 495 },   // 休息沙发区
+                meeting: { x: 450, y: 220 },      // 会议桌区域
+                server: { x: 720, y: 230 },       // 服务器机柜区
+                alert: { x: 620, y: 490 }
+            };
+
+            // 创建完整全身水豚角色（从PNG文件加载）
+            capy = game.physics.add.sprite(705, 495, 'capy_open');
+            capy.setOrigin(0.5);
+            capy.setScale(1.2);  // 48x48图片，适当缩放
+            capy.setAlpha(0.95);
+
+            // 豪华版牌匾：HappyCapy的办公室
+            const plaqueBg = game.add.rectangle(400, 570, 420, 45, 0x8B4513);
+            plaqueBg.setStrokeStyle(4, 0xfbbf24);
+            const plaqueText = game.add.text(400, 570, 'HappyCapy 豪华办公套间', {
+                font: 'bold 18px monospace',
+                fill: '#fbbf24',
+                fontWeight: 'bold',
+                stroke: '#000',
+                strokeThickness: 3
+            }).setOrigin(0.5);
+            // 牌匾两边加装饰
+            game.add.text(205, 570, '✨', { font: '22px' }).setOrigin(0.5);
+            game.add.text(595, 570, '✨', { font: '22px' }).setOrigin(0.5);
+
+            statusText = document.getElementById('status-text');
+            fetchStatus();
+        }
+
+        function update(time) {
+            if (time - lastFetch > FETCH_INTERVAL) { fetchStatus(); lastFetch = time; }
+
+            // 眨眼
+            if (time - lastBlink > BLINK_INTERVAL) {
+                capy.setTexture('capy_closed');
+                lastBlink = time;
+                setTimeout(() => { capy.setTexture('capy_open'); }, 150);
+            }
+
+            // 冒气泡
+            if (time - lastBubble > BUBBLE_INTERVAL) {
+                showBubble();
+                lastBubble = time;
+            }
+
+            // 打字机效果
+            if (typewriterIndex < typewriterTarget.length && time - lastTypewriter > TYPEWRITER_DELAY) {
+                typewriterText += typewriterTarget[typewriterIndex];
+                statusText.textContent = typewriterText;
+                typewriterIndex++;
+                lastTypewriter = time;
+            }
+
+            // 移动 + 小踱步
+            moveCapy(time);
+        }
+
+        function normalizeState(s) {
+            if (!s) return 'idle';
+            if (s === 'working') return 'writing';
+            if (s === 'run' || s === 'running') return 'executing';
+            if (s === 'sync') return 'syncing';
+            if (s === 'research') return 'researching';
+            return s;
+        }
+
+        function fetchStatus() {
+            fetch('/status')
+                .then(response => response.json())
+                .then(data => {
+                    const nextState = normalizeState(data.state);
+                    const stateInfo = STATES[nextState] || STATES.idle;
+                    const changed = nextState !== currentState;
+                    currentState = nextState;
+                    const nextLine = '[' + stateInfo.name + '] ' + (data.detail || '...');
+                    if (changed) {
+                        typewriterTarget = nextLine;
+                        typewriterText = '';
+                        typewriterIndex = 0;
+                        const targetArea = areas[stateInfo.area] || areas.breakroom;
+                        targetX = targetArea.x + (Math.random() - 0.5) * 40;
+                        targetY = targetArea.y + (Math.random() - 0.5) * 40;
+                    } else {
+                        if (!typewriterTarget || typewriterTarget !== nextLine) {
+                            typewriterTarget = nextLine;
+                            typewriterText = '';
+                            typewriterIndex = 0;
+                        }
+                    }
+                })
+                .catch(error => {
+                    typewriterTarget = '连接失败，正在重试...';
+                    typewriterText = '';
+                    typewriterIndex = 0;
+                });
+        }
+
+        function moveCapy(time) {
+            const stateInfo = STATES[currentState] || STATES.idle;
+            const baseTarget = areas[stateInfo.area] || areas.breakroom;
+            if (Math.random() < 0.005) {
+                targetX = baseTarget.x + (Math.random() - 0.5) * 40;
+                targetY = baseTarget.y + (Math.random() - 0.5) * 40;
+            }
+            const dx = targetX - capy.x;
+            const dy = targetY - capy.y;
+            const speed = 1.0;
+            const wobble = Math.sin(time / 200) * 0.6;
+            if (Math.abs(dx) > 3) capy.x += Math.sign(dx) * speed;
+            if (Math.abs(dy) > 3) capy.y += Math.sign(dy) * speed;
+            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+                capy.setY(capy.y + wobble);
+            }
+        }
+
+        function showBubble() {
+            if (bubble) { bubble.destroy(); bubble = null; }
+            const texts = BUBBLE_TEXTS[currentState] || BUBBLE_TEXTS.idle;
+            const text = texts[Math.floor(Math.random() * texts.length)];
+            const bg = game.add.rectangle(capy.x, capy.y - 45, text.length * 10 + 20, 28, 0xffffff, 0.95);
+            bg.setStrokeStyle(2, 0x000000);
+            const txt = game.add.text(capy.x, capy.y - 45, text, { font: '12px monospace', fill: '#000', align: 'center' }).setOrigin(0.5);
+            bubble = game.add.container(0, 0, [bg, txt]);
+            bubble.setDepth(100);
+            setTimeout(() => { if (bubble) { bubble.destroy(); bubble = null; } }, 3000);
+        }
+
+        new Phaser.Game(config);
+    </script>
+</body>
+</html>
