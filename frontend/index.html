@@ -3,386 +3,1107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HappyCapy 的像素办公室</title>
+    <title>Happy Capy 创业小窝</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            font-family: 'Courier New', monospace;
+            font-family: 'Microsoft YaHei', sans-serif;
+            overflow: hidden;
         }
-        #game-container {
-            border: 4px solid #fbbf24;
-            border-radius: 8px;
-            image-rendering: pixelated;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+
+        .main-container {
+            position: relative;
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
         }
-        #status-text {
+
+        /* 皮肤选择面板 */
+        .skin-panel {
             position: fixed;
-            bottom: 20px;
+            left: 20px;
+            top: 20px;
+            background: rgba(30, 25, 35, 0.95);
+            border-radius: 12px;
+            padding: 15px;
+            border: 2px solid #d4a44a;
+            z-index: 100;
+        }
+
+        .skin-panel h3 {
+            color: #d4a44a;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .skin-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .skin-btn {
+            padding: 6px 12px;
+            background: #2a2530;
+            border: 1px solid #555;
+            border-radius: 6px;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .skin-btn:hover {
+            background: #3a3540;
+            border-color: #d4a44a;
+        }
+
+        .skin-btn.active {
+            background: #d4a44a;
+            color: #1a1520;
+            border-color: #d4a44a;
+        }
+
+        /* 统计面板 */
+        .stats-panel {
+            position: fixed;
+            right: 20px;
+            top: 20px;
+            background: rgba(30, 25, 35, 0.95);
+            border-radius: 12px;
+            padding: 15px;
+            border: 2px solid #d4a44a;
+            min-width: 160px;
+            z-index: 100;
+        }
+
+        .stats-panel h3 {
+            color: #d4a44a;
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            color: #aaa;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+
+        /* 游戏容器 */
+        .game-wrapper {
+            position: relative;
+            border: 3px solid #d4a44a;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        }
+
+        .office-bg {
+            display: block;
+            width: 900px;
+            height: auto;
+        }
+
+        /* 交互区域 */
+        .area-overlay {
+            position: absolute;
+            border: 3px dashed transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .area-overlay:hover {
+            border-color: #f1c40f;
+            background: rgba(241, 196, 15, 0.15);
+        }
+
+        .area-overlay.active {
+            border-color: #2ecc71;
+            background: rgba(46, 204, 113, 0.2);
+        }
+
+        .area-label {
+            position: absolute;
+            bottom: -25px;
             left: 50%;
             transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .area-overlay:hover .area-label {
+            opacity: 1;
+        }
+
+        /* 水豚精灵 */
+        .capybara {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            z-index: 50;
+            image-rendering: auto;
+        }
+
+        /* 启用过渡动画（初始化后添加） */
+        .capybara.enable-transition {
+            transition: left 3s ease-in-out,
+                        top 3s ease-in-out;
+        }
+
+        /* 移动中的走路动画 - 缓慢悠闲的小碎步 */
+        .capybara.walking {
+            animation: walk 0.5s ease-in-out infinite;
+        }
+
+        @keyframes walk {
+            0%, 100% { transform: translateY(0) scaleX(1); }
+            25% { transform: translateY(-3px) scaleX(0.98); }
+            50% { transform: translateY(0) scaleX(1); }
+            75% { transform: translateY(-3px) scaleX(1.02); }
+        }
+
+        .capybara img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        /* 气泡 */
+        .speech-bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: #333;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 60;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            pointer-events: none;
+            max-width: 150px;
+        }
+
+        .speech-bubble.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 20px;
+            border: 8px solid transparent;
+            border-top-color: rgba(255, 255, 255, 0.95);
+            border-bottom: none;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 25, 35, 0.95);
+            border: 2px solid #d4a44a;
+            border-radius: 25px;
+            padding: 12px 30px;
             color: #fff;
             font-size: 14px;
-            background: rgba(0,0,0,0.8);
-            padding: 12px 24px;
-            border-radius: 8px;
-            max-width: 90%;
-            text-align: center;
-            border: 2px solid #fbbf24;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-idle { background: #3498db; }
+        .status-working { background: #2ecc71; }
+        .status-thinking { background: #f1c40f; }
+        .status-error { background: #e74c3c; }
+
+        .demo-btn {
+            margin-left: 15px;
+            padding: 6px 12px;
+            background: #9b59b6;
+            border: none;
+            border-radius: 15px;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .demo-btn:hover {
+            background: #8e44ad;
+        }
+
+        .demo-btn.active {
+            background: #e74c3c;
+            animation: pulse 1s infinite;
+        }
+
+        /* 进度条 */
+        .progress-bar {
+            position: absolute;
+            height: 6px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .progress-bar.show {
+            opacity: 1;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f1c40f, #e67e22);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        /* 加载提示 */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #d4a44a;
+            font-size: 18px;
         }
     </style>
 </head>
 <body>
-    <div id="game-container"></div>
-    <div id="status-text">加载中...</div>
+    <!-- 皮肤选择 -->
+    <div class="skin-panel">
+        <h3><span>🦫</span> Capy装扮</h3>
+        <div class="skin-buttons">
+            <button class="skin-btn active" data-skin="default">默认</button>
+            <button class="skin-btn" data-skin="glasses">眼镜</button>
+            <button class="skin-btn" data-skin="hat">帽子</button>
+            <button class="skin-btn" data-skin="bowtie">领结</button>
+            <button class="skin-btn" data-skin="crown">皇冠</button>
+        </div>
+    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
-    <script src="/static/images.js"></script>
+    <!-- 统计面板 -->
+    <div class="stats-panel">
+        <h3><span>📊</span> 工作统计</h3>
+        <div class="stat-item">
+            <span>办公桌</span>
+            <span class="stat-value" id="stat-desk">0分钟</span>
+        </div>
+        <div class="stat-item">
+            <span>图书区</span>
+            <span class="stat-value" id="stat-library">0分钟</span>
+        </div>
+        <div class="stat-item">
+            <span>服务器</span>
+            <span class="stat-value" id="stat-server">0分钟</span>
+        </div>
+        <div class="stat-item">
+            <span>休息区</span>
+            <span class="stat-value" id="stat-lounge">0分钟</span>
+        </div>
+        <div class="stat-item">
+            <span>会议室</span>
+            <span class="stat-value" id="stat-meeting">0分钟</span>
+        </div>
+        <div class="stat-item" style="border-top: 1px solid #444; padding-top: 6px; margin-top: 6px;">
+            <span>今日总计</span>
+            <span class="stat-value" id="stat-total">0分钟</span>
+        </div>
+    </div>
+
+    <!-- 游戏区域 -->
+    <div class="game-wrapper">
+        <img src="" alt="Office" class="office-bg" id="officeBg">
+        <div class="loading" id="loading">加载中...</div>
+
+        <!-- 交互区域将由JS动态创建 -->
+        <div id="areas-container"></div>
+
+        <!-- 水豚 -->
+        <div class="capybara" id="capybara">
+            <img src="" alt="Capy" id="capyImg">
+        </div>
+
+        <!-- 气泡 -->
+        <div class="speech-bubble" id="bubble"></div>
+
+        <!-- 进度条 -->
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="status-indicator status-idle" id="statusIndicator"></div>
+        <span id="statusText">[待命] 等待任务中...</span>
+        <button class="demo-btn" id="demoBtn" onclick="toggleDemo()">演示模式</button>
+    </div>
+
+    <script src="/static/bg_base64.js?v=11"></script>
     <script>
-        const config = {
-            type: Phaser.AUTO,
-            width: 800,
-            height: 600,
-            parent: 'game-container',
-            pixelArt: true,
-            physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
-            scene: { preload: preload, create: create, update: update },
-            loader: {
-                crossOrigin: 'anonymous'
+        // 区域配置 - 根据图片1200x896精确定位
+        const AREAS = {
+            desk: {
+                name: '办公桌',
+                // 左上角办公桌区域 - 红地毯+电脑桌
+                x: 40, y: 128, width: 320, height: 240,
+                // Capy坐在电脑椅子上
+                capyPos: { x: 200, y: 280 }
+            },
+            meeting: {
+                name: '会议室',
+                // 中间会议桌区域 - 蓝地毯+圆桌
+                x: 340, y: 280, width: 520, height: 300,
+                // Capy坐在会议桌旁的椅子上
+                capyPos: { x: 600, y: 450 }
+            },
+            server: {
+                name: '服务器机房',
+                // 右上角服务器区域
+                x: 840, y: 128, width: 320, height: 240,
+                // Capy站在服务器机柜前
+                capyPos: { x: 980, y: 280 }
+            },
+            lounge: {
+                name: '休息区',
+                // 左下角沙发区域 - 绿沙发
+                x: 40, y: 430, width: 320, height: 300,
+                // Capy坐在绿沙发的坐垫上 (关键修复：y值调整到沙发坐垫位置)
+                capyPos: { x: 180, y: 680 }
+            },
+            library: {
+                name: '图书区',
+                // 右下角书架区域
+                x: 840, y: 430, width: 320, height: 300,
+                // Capy站在书架旁边的地板上看书 (不是站在书上)
+                capyPos: { x: 920, y: 680 }
             }
         };
 
-        const STATES = {
-            idle: { name: '待命', area: 'breakroom' },
-            writing: { name: '整理文档', area: 'workdesk' },
-            researching: { name: '搜索信息', area: 'library' },
-            executing: { name: '执行任务', area: 'server' },
-            syncing: { name: '同步备份', area: 'library' },
-            error: { name: '出错了', area: 'breakroom' }
+        // 状态映射 - 更细分的状态
+        const STATE_CONFIG = {
+            // 待机状态
+            idle: { area: 'lounge', color: '#3498db', label: '待命' },
+            waiting: { area: 'lounge', color: '#3498db', label: '等待中' },
+            ready: { area: 'lounge', color: '#2ecc71', label: '准备就绪' },
+
+            // 思考类状态
+            thinking: { area: 'library', color: '#f1c40f', label: '思考中' },
+            analyzing: { area: 'library', color: '#f39c12', label: '分析中' },
+            planning: { area: 'library', color: '#e74c3c', label: '规划中' },
+
+            // 研究类状态
+            researching: { area: 'library', color: '#9b59b6', label: '查资料' },
+            reading: { area: 'library', color: '#8e44ad', label: '阅读中' },
+            learning: { area: 'library', color: '#9b59b6', label: '学习中' },
+            searching: { area: 'library', color: '#3498db', label: '搜索中' },
+
+            // 编码类状态
+            writing: { area: 'desk', color: '#2ecc71', label: '编码中' },
+            coding: { area: 'desk', color: '#27ae60', label: '写代码' },
+            editing: { area: 'desk', color: '#1abc9c', label: '编辑中' },
+            debugging: { area: 'desk', color: '#e67e22', label: '调试中' },
+            refactoring: { area: 'desk', color: '#16a085', label: '重构中' },
+
+            // 执行类状态
+            executing: { area: 'server', color: '#e67e22', label: '执行中' },
+            running: { area: 'server', color: '#d35400', label: '运行中' },
+            processing: { area: 'server', color: '#e74c3c', label: '处理中' },
+            building: { area: 'server', color: '#f39c12', label: '构建中' },
+            testing: { area: 'server', color: '#9b59b6', label: '测试中' },
+            deploying: { area: 'server', color: '#1abc9c', label: '部署中' },
+
+            // 协作类状态（会议室）
+            meeting: { area: 'meeting', color: '#1abc9c', label: '开会中' },
+            discussing: { area: 'meeting', color: '#16a085', label: '讨论中' },
+            reviewing: { area: 'meeting', color: '#2980b9', label: '评审中' },
+            collaborating: { area: 'meeting', color: '#8e44ad', label: '协作中' },
+            responding: { area: 'meeting', color: '#3498db', label: '回复中' },
+            explaining: { area: 'meeting', color: '#9b59b6', label: '解释中' },
+            presenting: { area: 'meeting', color: '#e67e22', label: '展示中' },
+            chatting: { area: 'meeting', color: '#1abc9c', label: '闲聊中' },
+            answering: { area: 'meeting', color: '#27ae60', label: '回答中' },
+
+            // 异常状态
+            error: { area: 'lounge', color: '#e74c3c', label: '出错了' },
+            stuck: { area: 'lounge', color: '#c0392b', label: '卡住了' },
+            confused: { area: 'library', color: '#e74c3c', label: '困惑中' }
         };
 
+        // 气泡文字 - 幽默内心OS
         const BUBBLE_TEXTS = {
-            idle: ['享受生活~', 'Capy时间！', '放松一下', '泡个温泉吧'],
-            writing: ['认真记录中', '这个重要', '整理思绪', '笔记很关键'],
-            researching: ['查找资料', '发现新知识', '这个有趣', '深入研究中'],
-            executing: ['全力以赴！', '马上完成', '效率max', '任务进行中'],
-            syncing: ['备份数据', '安全第一', '云端同步', '保存进度'],
-            error: ['哎呀...', '遇到问题了', '让我看看', '马上解决']
+            idle: [
+                '摸鱼时间到~',
+                '老板不在，放松一下',
+                '今天也是努力躺平的一天',
+                '键盘敲累了，休息5分钟',
+                '泡杯咖啡先...',
+                'Capy需要充电',
+                '发呆也是一种工作',
+                '等等...刚才想到哪了？',
+                '打个盹不过分吧？',
+                '工作？什么工作？'
+            ],
+            waiting: [
+                '等你呢，快点~',
+                '无聊.jpg',
+                '有活来了吗？',
+                '随时待命中...'
+            ],
+            thinking: [
+                '让我想想...',
+                '嗯...这个嘛...',
+                '大脑正在高速运转',
+                '思考人生.jpg',
+                '据我分析...',
+                '等等，灵感来了！',
+                '这题我见过！',
+                '容我三思...',
+                '脑子：已过载',
+                '哲学性思考中...'
+            ],
+            analyzing: [
+                '分析中，勿扰',
+                '数据好多啊...',
+                '让我康康...',
+                '福尔摩斯模式开启'
+            ],
+            researching: [
+                '查资料中...别催',
+                'Google是我朋友',
+                'Stack Overflow救我',
+                '知识就是力量！',
+                '又学到新东西了',
+                '这文档写的什么鬼...',
+                '终于找到了！',
+                'RTFM ing...'
+            ],
+            reading: [
+                '认真阅读中...',
+                '这段代码有意思',
+                '看不懂，装懂中',
+                '字都认识，连起来就...'
+            ],
+            writing: [
+                '敲代码中，请勿打扰',
+                '键盘在燃烧！',
+                'Bug制造机启动~',
+                '写完就下班！',
+                '这代码绝了',
+                '优雅！太优雅了！',
+                'cv大法好',
+                '一顿操作猛如虎',
+                '头发又少了...',
+                '这样写应该没问题吧？'
+            ],
+            coding: [
+                '代码如诗~',
+                '// TODO: 以后再说',
+                'console.log调试大法',
+                '能跑就行.jpg'
+            ],
+            debugging: [
+                '这Bug从哪来的？',
+                '不是我写的！',
+                '99个Bug，修1个...',
+                '还剩100个Bug',
+                '要疯了...',
+                '明明刚才还好好的！',
+                '为什么不行？？？'
+            ],
+            executing: [
+                '运行中...祈祷吧',
+                '服务器别炸...',
+                '能过就是胜利',
+                '进度条好慢啊',
+                'Loading...',
+                '系统繁忙，请稍候'
+            ],
+            running: [
+                '跑起来了！',
+                '还在跑...',
+                '快了快了...',
+                '服务器：我太难了'
+            ],
+            testing: [
+                '测试中，心惊胆战',
+                '绿了绿了！',
+                '怎么红了？！',
+                '单元测试？不存在的'
+            ],
+            meeting: [
+                '开会ing...',
+                '又开会？',
+                '这会能短点吗',
+                '神游中...',
+                '假装在听.jpg',
+                '点头就完事了',
+                '好的好的，没问题'
+            ],
+            discussing: [
+                '激烈讨论中',
+                '我觉得可以...',
+                '你说得对，但是...',
+                '头脑风暴！'
+            ],
+            responding: [
+                '让我来回答~',
+                '好问题！',
+                '稍等，整理一下思路',
+                '这个我知道！'
+            ],
+            explaining: [
+                '听我给你讲...',
+                '简单来说就是...',
+                '举个例子吧',
+                '你懂我意思吗？'
+            ],
+            presenting: [
+                '看这里！',
+                '重点来了',
+                '成果展示时间',
+                'Ta-da~'
+            ],
+            chatting: [
+                '闲聊一下~',
+                '话说...',
+                '对了对了',
+                '哈哈哈'
+            ],
+            answering: [
+                '答案是...',
+                '我来解答',
+                '这样的...',
+                '你问对人了！'
+            ],
+            error: [
+                '啊这...出错了',
+                '救命！',
+                '不是我的锅！',
+                '别慌，让我看看',
+                '重启试试？',
+                '完蛋.jpg',
+                '谁动我代码了？'
+            ],
+            stuck: [
+                '卡住了...',
+                '救救孩子',
+                '脑子空白中',
+                '需要帮助！'
+            ],
+            confused: [
+                '???',
+                '看不懂...',
+                '这什么鬼？',
+                '我是谁？我在哪？'
+            ]
         };
 
-        // 状态变量
-        let gameInstance = null;
-        let capy = null;
-        let areas = {};
+        // 状态
         let currentState = 'idle';
-        let currentDetail = '';
-        let statusText = null;
-        let targetX = 150;
-        let targetY = 500;
+        let currentSkin = 'default';
+        let currentArea = 'lounge';
+        let stats = { desk: 0, library: 0, server: 0, lounge: 0, meeting: 0 };
+        let lastUpdate = Date.now();
+        let walkingTimeout = null; // 走路动画定时器
 
-        // 气泡相关
-        let bubble = null;
-        let bubbleTimer = null;
+        // 水豚图片 (使用emoji作为占位符，之后可以替换为真实图片)
+        const capyImages = {
+            default: 'data:image/svg+xml,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="60" rx="35" ry="25" fill="#8B6914"/>
+                    <ellipse cx="50" cy="40" rx="28" ry="22" fill="#A0782C"/>
+                    <ellipse cx="35" cy="15" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="65" cy="15" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="50" cy="48" rx="12" ry="8" fill="#5D4E37"/>
+                    <circle cx="40" cy="35" r="4" fill="#2C2416"/>
+                    <circle cx="60" cy="35" r="4" fill="#2C2416"/>
+                    <circle cx="41" cy="34" r="1.5" fill="white"/>
+                    <circle cx="61" cy="34" r="1.5" fill="white"/>
+                    <ellipse cx="35" cy="75" rx="10" ry="8" fill="#7A5D12"/>
+                    <ellipse cx="65" cy="75" rx="10" ry="8" fill="#7A5D12"/>
+                </svg>
+            `),
+            glasses: 'data:image/svg+xml,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="60" rx="35" ry="25" fill="#8B6914"/>
+                    <ellipse cx="50" cy="40" rx="28" ry="22" fill="#A0782C"/>
+                    <ellipse cx="35" cy="15" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="65" cy="15" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="50" cy="48" rx="12" ry="8" fill="#5D4E37"/>
+                    <circle cx="40" cy="35" r="4" fill="#2C2416"/>
+                    <circle cx="60" cy="35" r="4" fill="#2C2416"/>
+                    <circle cx="41" cy="34" r="1.5" fill="white"/>
+                    <circle cx="61" cy="34" r="1.5" fill="white"/>
+                    <ellipse cx="35" cy="75" rx="10" ry="8" fill="#7A5D12"/>
+                    <ellipse cx="65" cy="75" rx="10" ry="8" fill="#7A5D12"/>
+                    <rect x="30" y="30" width="15" height="12" rx="2" fill="none" stroke="#333" stroke-width="2"/>
+                    <rect x="55" y="30" width="15" height="12" rx="2" fill="none" stroke="#333" stroke-width="2"/>
+                    <line x1="45" y1="36" x2="55" y2="36" stroke="#333" stroke-width="2"/>
+                </svg>
+            `),
+            hat: 'data:image/svg+xml,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="65" rx="35" ry="25" fill="#8B6914"/>
+                    <ellipse cx="50" cy="45" rx="28" ry="22" fill="#A0782C"/>
+                    <ellipse cx="35" cy="22" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="65" cy="22" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="50" cy="53" rx="12" ry="8" fill="#5D4E37"/>
+                    <circle cx="40" cy="40" r="4" fill="#2C2416"/>
+                    <circle cx="60" cy="40" r="4" fill="#2C2416"/>
+                    <circle cx="41" cy="39" r="1.5" fill="white"/>
+                    <circle cx="61" cy="39" r="1.5" fill="white"/>
+                    <ellipse cx="35" cy="80" rx="10" ry="8" fill="#7A5D12"/>
+                    <ellipse cx="65" cy="80" rx="10" ry="8" fill="#7A5D12"/>
+                    <rect x="30" y="8" width="40" height="15" fill="#3498db"/>
+                    <rect x="25" y="20" width="50" height="6" fill="#3498db"/>
+                </svg>
+            `),
+            bowtie: 'data:image/svg+xml,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="55" rx="35" ry="25" fill="#8B6914"/>
+                    <ellipse cx="50" cy="35" rx="28" ry="22" fill="#A0782C"/>
+                    <ellipse cx="35" cy="12" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="65" cy="12" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="50" cy="43" rx="12" ry="8" fill="#5D4E37"/>
+                    <circle cx="40" cy="30" r="4" fill="#2C2416"/>
+                    <circle cx="60" cy="30" r="4" fill="#2C2416"/>
+                    <circle cx="41" cy="29" r="1.5" fill="white"/>
+                    <circle cx="61" cy="29" r="1.5" fill="white"/>
+                    <ellipse cx="35" cy="70" rx="10" ry="8" fill="#7A5D12"/>
+                    <ellipse cx="65" cy="70" rx="10" ry="8" fill="#7A5D12"/>
+                    <polygon points="35,58 50,65 35,72" fill="#e74c3c"/>
+                    <polygon points="65,58 50,65 65,72" fill="#e74c3c"/>
+                    <circle cx="50" cy="65" r="4" fill="#c0392b"/>
+                </svg>
+            `),
+            crown: 'data:image/svg+xml,' + encodeURIComponent(`
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                    <ellipse cx="50" cy="65" rx="35" ry="25" fill="#8B6914"/>
+                    <ellipse cx="50" cy="45" rx="28" ry="22" fill="#A0782C"/>
+                    <ellipse cx="35" cy="22" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="65" cy="22" rx="8" ry="10" fill="#8B6914"/>
+                    <ellipse cx="50" cy="53" rx="12" ry="8" fill="#5D4E37"/>
+                    <circle cx="40" cy="40" r="4" fill="#2C2416"/>
+                    <circle cx="60" cy="40" r="4" fill="#2C2416"/>
+                    <circle cx="41" cy="39" r="1.5" fill="white"/>
+                    <circle cx="61" cy="39" r="1.5" fill="white"/>
+                    <ellipse cx="35" cy="80" rx="10" ry="8" fill="#7A5D12"/>
+                    <ellipse cx="65" cy="80" rx="10" ry="8" fill="#7A5D12"/>
+                    <polygon points="30,18 35,5 42,15 50,2 58,15 65,5 70,18" fill="#f1c40f"/>
+                    <rect x="30" y="18" width="40" height="6" fill="#f1c40f"/>
+                    <circle cx="50" cy="8" r="3" fill="#e74c3c"/>
+                </svg>
+            `)
+        };
 
-        // 眨眼相关
-        let blinkTimer = null;
-        let isBlinking = false;
+        // 初始化
+        function init() {
+            const img = document.getElementById('officeBg');
 
-        // 打字机效果
-        let typewriterText = '';
-        let typewriterTarget = '';
-        let typewriterIndex = 0;
+            // 使用base64编码的图片
+            img.src = OFFICE_BG;
 
-        // 时间控制
-        let lastFetch = 0;
-        let lastBubble = 0;
-        let lastTypewriter = 0;
+            img.onload = function() {
+                document.getElementById('loading').style.display = 'none';
+                createAreas();
+                updateCapy();
 
-        // 并发控制
-        let isFetching = false;
+                // 加载持久化的统计数据
+                loadStats();
+                updateStatsDisplay();
 
-        // 常量
-        const FETCH_INTERVAL = 2000;
-        const BLINK_INTERVAL = 2500;
-        const BUBBLE_INTERVAL = 8000;
-        const TYPEWRITER_DELAY = 50;
+                // 初始位置：无动画，直接定位
+                setCapyPositionInstant('lounge');
 
-        // 纹理加载计数器
-        let texturesLoaded = 0;
-        const TOTAL_TEXTURES = 3;
+                // 延迟启用过渡动画，避免初始加载卡顿
+                setTimeout(() => {
+                    document.getElementById('capybara').classList.add('enable-transition');
+                }, 100);
 
-        function preload() {
-            const scene = this;
-
-            // 监听纹理加载完成事件
-            this.textures.on('addtexture', function(key) {
-                texturesLoaded++;
-                console.log('Loaded texture:', key, texturesLoaded + '/' + TOTAL_TEXTURES);
-            });
-
-            // 使用 base64 图片避免跨域问题
-            this.textures.addBase64('office_bg', IMG_OFFICE_BG);
-            this.textures.addBase64('capy_open', IMG_CAPY_OPEN);
-            this.textures.addBase64('capy_closed', IMG_CAPY_CLOSED);
-        }
-
-        function create() {
-            gameInstance = this;
-            const scene = this;
-
-            // 等待所有纹理加载完成后初始化场景
-            function initScene() {
-                scene.add.image(400, 300, 'office_bg');
-
-                areas = {
-                    workdesk: { x: 130, y: 235 },
-                    breakroom: { x: 150, y: 500 },
-                    meeting: { x: 420, y: 320 },
-                    server: { x: 675, y: 220 },
-                    library: { x: 680, y: 470 },
-                    alert: { x: 150, y: 500 }
-                };
-
-                // 创建水豚角色
-                capy = scene.physics.add.sprite(150, 500, 'capy_open');
-                capy.setOrigin(0.5);
-                capy.setScale(1.2);
-                capy.setAlpha(1.0);
-                capy.setDepth(50);
-
-                // 牌匾
-                const plaqueBg = scene.add.rectangle(400, 570, 420, 45, 0x8B4513);
-                plaqueBg.setStrokeStyle(4, 0xfbbf24);
-                plaqueBg.setDepth(80);
-                const plaqueText = scene.add.text(400, 570, 'Happy Capy创业小窝', {
-                    font: 'bold 18px monospace',
-                    fill: '#fbbf24',
-                    stroke: '#000',
-                    strokeThickness: 3
-                }).setOrigin(0.5).setDepth(81);
-
-                statusText = document.getElementById('status-text');
-
-                // 使用Phaser定时器进行眨眼（避免setTimeout泄漏）
-                scene.time.addEvent({
-                    delay: BLINK_INTERVAL,
-                    callback: doBlink,
-                    callbackScope: scene,
-                    loop: true
-                });
-
-                // 初始获取状态
-                fetchStatus();
-
-                console.log('Scene initialized successfully');
-            }
-
-            // 检查纹理是否已全部加载
-            if (texturesLoaded >= TOTAL_TEXTURES) {
-                initScene();
-            } else {
-                // 等待纹理加载完成
-                const checkInterval = scene.time.addEvent({
-                    delay: 100,
-                    callback: function() {
-                        if (texturesLoaded >= TOTAL_TEXTURES) {
-                            checkInterval.remove();
-                            initScene();
-                        }
-                    },
-                    loop: true
-                });
-            }
-        }
-
-        function update(time) {
-            // 状态轮询（带并发控制）
-            if (time - lastFetch > FETCH_INTERVAL && !isFetching) {
-                fetchStatus();
-                lastFetch = time;
-            }
-
-            // 定期气泡
-            if (time - lastBubble > BUBBLE_INTERVAL) {
-                showBubble(currentState === 'idle' ? null : currentDetail);
-                lastBubble = time;
-            }
-
-            // 打字机效果
-            if (typewriterIndex < typewriterTarget.length && time - lastTypewriter > TYPEWRITER_DELAY) {
-                typewriterText += typewriterTarget[typewriterIndex];
-                if (statusText) {
-                    statusText.textContent = typewriterText;
-                }
-                typewriterIndex++;
-                lastTypewriter = time;
-            }
-
-            // 移动水豚
-            moveCapy(time);
-        }
-
-        function doBlink() {
-            if (!capy || isBlinking) return;
-            isBlinking = true;
-            capy.setTexture('capy_closed');
-
-            // 使用Phaser定时器恢复
-            if (gameInstance) {
-                gameInstance.time.delayedCall(150, () => {
-                    if (capy) {
-                        capy.setTexture('capy_open');
-                    }
-                    isBlinking = false;
-                });
-            }
-        }
-
-        function normalizeState(s) {
-            if (!s) return 'idle';
-            const stateMap = {
-                'working': 'writing',
-                'run': 'executing',
-                'running': 'executing',
-                'sync': 'syncing',
-                'research': 'researching'
+                startPolling();
+                startBubbleTimer();
             };
-            return stateMap[s] || s;
-        }
 
-        function fetchStatus() {
-            if (isFetching) return;
-            isFetching = true;
+            img.onerror = function() {
+                document.getElementById('loading').textContent = '图片加载失败';
+            };
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-            fetch('/status', { signal: controller.signal })
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    clearTimeout(timeoutId);
-                    const nextState = normalizeState(data.state);
-                    const stateInfo = STATES[nextState] || STATES.idle;
-                    const changed = nextState !== currentState;
-                    const detailChanged = currentDetail !== (data.detail || '');
-
-                    currentState = nextState;
-                    currentDetail = data.detail || '';
-
-                    if (changed || detailChanged) {
-                        const nextLine = '[' + stateInfo.name + '] ' + currentDetail;
-                        typewriterTarget = nextLine;
-                        typewriterText = '';
-                        typewriterIndex = 0;
-
-                        const targetArea = areas[stateInfo.area] || areas.breakroom;
-                        targetX = targetArea.x + (Math.random() - 0.5) * 40;
-                        targetY = targetArea.y + (Math.random() - 0.5) * 40;
-
-                        showBubble(currentDetail);
-                    }
-                })
-                .catch(error => {
-                    clearTimeout(timeoutId);
-                    if (error.name !== 'AbortError') {
-                        typewriterTarget = '连接失败，正在重试...';
-                        typewriterText = '';
-                        typewriterIndex = 0;
-                    }
-                })
-                .finally(() => {
-                    isFetching = false;
+            // 皮肤按钮
+            document.querySelectorAll('.skin-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.skin-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentSkin = btn.dataset.skin;
+                    updateCapy();
                 });
+            });
         }
 
-        function moveCapy(time) {
-            if (!capy) return;
+        // 创建交互区域
+        function createAreas() {
+            const container = document.getElementById('areas-container');
+            const img = document.getElementById('officeBg');
+            const scale = img.offsetWidth / img.naturalWidth;
 
-            const stateInfo = STATES[currentState] || STATES.idle;
-            const baseTarget = areas[stateInfo.area] || areas.breakroom;
+            Object.entries(AREAS).forEach(([key, area]) => {
+                const div = document.createElement('div');
+                div.className = 'area-overlay';
+                div.id = `area-${key}`;
+                div.style.left = (area.x * scale) + 'px';
+                div.style.top = (area.y * scale) + 'px';
+                div.style.width = (area.width * scale) + 'px';
+                div.style.height = (area.height * scale) + 'px';
 
-            // 偶尔随机微调目标位置
-            if (Math.random() < 0.005) {
-                targetX = baseTarget.x + (Math.random() - 0.5) * 40;
-                targetY = baseTarget.y + (Math.random() - 0.5) * 40;
-            }
+                const label = document.createElement('div');
+                label.className = 'area-label';
+                label.textContent = area.name;
+                div.appendChild(label);
 
-            const dx = targetX - capy.x;
-            const dy = targetY - capy.y;
-            const speed = 1.0;
+                div.addEventListener('click', () => moveCapyToArea(key));
 
-            if (Math.abs(dx) > 3) {
-                capy.x += Math.sign(dx) * speed;
-            }
-            if (Math.abs(dy) > 3) {
-                capy.y += Math.sign(dy) * speed;
-            }
-
-            // 移动时的摇摆效果
-            if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-                const wobble = Math.sin(time / 200) * 0.6;
-                capy.y += wobble;
-            }
+                container.appendChild(div);
+            });
         }
 
-        function showBubble(customText) {
-            // 清理旧气泡
-            destroyBubble();
+        // 设置水豚位置（无动画，用于初始化）
+        function setCapyPositionInstant(areaKey) {
+            const img = document.getElementById('officeBg');
+            const scale = img.offsetWidth / img.naturalWidth;
+            const area = AREAS[areaKey];
+            const capy = document.getElementById('capybara');
 
-            if (!gameInstance || !capy) return;
+            // 直接设置位置
+            capy.style.left = (area.capyPos.x * scale - 30) + 'px';
+            capy.style.top = (area.capyPos.y * scale - 30) + 'px';
 
-            let text;
-            if (customText && customText.length > 0) {
-                text = customText.length > 20 ? customText.substring(0, 20) + '...' : customText;
+            // 更新活动区域高亮
+            document.querySelectorAll('.area-overlay').forEach(el => el.classList.remove('active'));
+            document.getElementById(`area-${areaKey}`).classList.add('active');
+
+            currentArea = areaKey;
+        }
+
+        // 移动水豚到指定区域（带走路动画）
+        function moveCapyToArea(areaKey) {
+            const img = document.getElementById('officeBg');
+            const scale = img.offsetWidth / img.naturalWidth;
+            const area = AREAS[areaKey];
+            const capy = document.getElementById('capybara');
+
+            // 更新活动区域高亮
+            document.querySelectorAll('.area-overlay').forEach(el => el.classList.remove('active'));
+            document.getElementById(`area-${areaKey}`).classList.add('active');
+
+            const newLeft = area.capyPos.x * scale - 30;
+            const newTop = area.capyPos.y * scale - 30;
+
+            // 计算移动距离
+            const currentLeft = parseFloat(capy.style.left) || 0;
+            const currentTop = parseFloat(capy.style.top) || 0;
+            const distance = Math.sqrt(Math.pow(newLeft - currentLeft, 2) + Math.pow(newTop - currentTop, 2));
+
+            // 只有过渡动画启用且移动距离大于10像素才播放走路动画
+            if (distance > 10 && capy.classList.contains('enable-transition')) {
+                // 清除之前的走路动画定时器
+                if (walkingTimeout) {
+                    clearTimeout(walkingTimeout);
+                }
+
+                capy.classList.add('walking');
+
+                // 移动完成后移除走路动画（3秒后）
+                walkingTimeout = setTimeout(() => {
+                    capy.classList.remove('walking');
+                    walkingTimeout = null;
+                }, 3000);
+            }
+
+            capy.style.left = newLeft + 'px';
+            capy.style.top = newTop + 'px';
+
+            currentArea = areaKey;
+        }
+
+        // 更新水豚显示
+        function updateCapy() {
+            const capyImg = document.getElementById('capyImg');
+            capyImg.src = capyImages[currentSkin];
+        }
+
+        // 显示气泡
+        function showBubble(text) {
+            const bubble = document.getElementById('bubble');
+            const capy = document.getElementById('capybara');
+
+            bubble.textContent = text;
+            bubble.style.left = (parseFloat(capy.style.left) + 30) + 'px';
+            bubble.style.top = (parseFloat(capy.style.top) - 50) + 'px';
+            bubble.classList.add('show');
+
+            setTimeout(() => bubble.classList.remove('show'), 3000);
+        }
+
+        // 更新状态
+        function updateState(newState, detail, progress) {
+            const config = STATE_CONFIG[newState] || STATE_CONFIG.idle;
+
+            // 更新状态指示器
+            const indicator = document.getElementById('statusIndicator');
+            indicator.style.background = config.color;
+
+            // 更新状态文字 - 显示原始状态名和详情
+            document.getElementById('statusText').textContent =
+                `[${config.label}:${newState}] ${detail || ''}`;
+
+            // 移动水豚到对应区域
+            if (newState !== currentState) {
+                moveCapyToArea(config.area);
+                currentState = newState;
+
+                // 显示气泡
+                const texts = BUBBLE_TEXTS[newState];
+                if (texts) {
+                    showBubble(texts[Math.floor(Math.random() * texts.length)]);
+                }
+            }
+
+            // 更新进度条
+            if (progress > 0) {
+                const progressBar = document.getElementById('progressBar');
+                const progressFill = document.getElementById('progressFill');
+                const capy = document.getElementById('capybara');
+
+                progressBar.style.left = capy.style.left;
+                progressBar.style.top = (parseFloat(capy.style.top) + 65) + 'px';
+                progressBar.style.width = '60px';
+                progressBar.classList.add('show');
+                progressFill.style.width = progress + '%';
             } else {
-                const texts = BUBBLE_TEXTS[currentState] || BUBBLE_TEXTS.idle;
-                text = texts[Math.floor(Math.random() * texts.length)];
-            }
-
-            const bubbleWidth = Math.max(text.length * 9 + 30, 80);
-            const bubbleX = capy.x;
-            const bubbleY = capy.y - 55;
-
-            const bg = gameInstance.add.rectangle(bubbleX, bubbleY, bubbleWidth, 32, 0xffffff, 0.95);
-            bg.setStrokeStyle(2, 0x2c3e50);
-
-            const txt = gameInstance.add.text(bubbleX, bubbleY, text, {
-                font: 'bold 11px monospace',
-                fill: '#2c3e50',
-                align: 'center'
-            }).setOrigin(0.5);
-
-            bubble = gameInstance.add.container(0, 0, [bg, txt]);
-            bubble.setDepth(100);
-
-            // 使用Phaser定时器自动销毁
-            bubbleTimer = gameInstance.time.delayedCall(4000, destroyBubble);
-        }
-
-        function destroyBubble() {
-            if (bubbleTimer) {
-                bubbleTimer.remove();
-                bubbleTimer = null;
-            }
-            if (bubble) {
-                bubble.destroy();
-                bubble = null;
+                document.getElementById('progressBar').classList.remove('show');
             }
         }
 
-        // 页面卸载时清理
-        window.addEventListener('beforeunload', () => {
-            destroyBubble();
-        });
+        // 更新统计（计算时间）
+        function updateStats() {
+            const now = Date.now();
+            const elapsed = (now - lastUpdate) / 1000 / 60; // 分钟
+            lastUpdate = now;
 
-        new Phaser.Game(config);
+            if (currentArea && stats.hasOwnProperty(currentArea)) {
+                stats[currentArea] += elapsed;
+            }
+
+            updateStatsDisplay();
+            saveStats(); // 持久化保存
+        }
+
+        // 更新统计显示（不计算时间）
+        function updateStatsDisplay() {
+            document.getElementById('stat-desk').textContent = formatTime(stats.desk);
+            document.getElementById('stat-library').textContent = formatTime(stats.library);
+            document.getElementById('stat-server').textContent = formatTime(stats.server);
+            document.getElementById('stat-lounge').textContent = formatTime(stats.lounge);
+            document.getElementById('stat-meeting').textContent = formatTime(stats.meeting);
+
+            const total = Object.values(stats).reduce((a, b) => a + b, 0);
+            document.getElementById('stat-total').textContent = formatTime(total);
+        }
+
+        function formatTime(minutes) {
+            if (minutes < 0.1) return '0秒';
+            if (minutes < 1) return Math.floor(minutes * 60) + '秒';
+            if (minutes < 60) return Math.floor(minutes) + '分钟';
+            return Math.floor(minutes / 60) + '小时' + Math.floor(minutes % 60) + '分';
+        }
+
+        // 轮询状态
+        let pollingInterval = null;
+        let statsInterval = null;
+
+        function startPolling() {
+            fetchStatus();
+            pollingInterval = setInterval(fetchStatus, 2000);
+            statsInterval = setInterval(updateStats, 5000); // 每5秒更新统计
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        function resumePolling() {
+            if (!pollingInterval) {
+                pollingInterval = setInterval(fetchStatus, 2000);
+            }
+        }
+
+        async function fetchStatus() {
+            // 演示模式下不获取真实状态
+            if (demoMode) return;
+
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                updateState(data.state, data.detail, data.progress || 0);
+            } catch (e) {
+                console.error('Failed to fetch status:', e);
+            }
+        }
+
+        // 随机气泡
+        function startBubbleTimer() {
+            setInterval(() => {
+                if (Math.random() < 0.3) {
+                    const texts = BUBBLE_TEXTS[currentState];
+                    if (texts) {
+                        showBubble(texts[Math.floor(Math.random() * texts.length)]);
+                    }
+                }
+            }, 8000);
+        }
+
+        // ========== 演示模式 ==========
+        let demoMode = false;
+        let demoInterval = null;
+        let demoStateIndex = 0;
+
+        // 演示状态序列 - 模拟AI工作流程
+        const DEMO_SEQUENCE = [
+            { state: 'idle', detail: '等待任务中...', progress: 0 },
+            { state: 'responding', detail: '收到！让我来处理...', progress: 5 },
+            { state: 'thinking', detail: '分析用户需求...', progress: 10 },
+            { state: 'discussing', detail: '确认一下需求细节...', progress: 15 },
+            { state: 'researching', detail: '查找相关代码...', progress: 20 },
+            { state: 'reading', detail: '阅读 index.html...', progress: 30 },
+            { state: 'planning', detail: '规划实现方案...', progress: 35 },
+            { state: 'explaining', detail: '解释一下我的思路...', progress: 40 },
+            { state: 'writing', detail: '编写新功能代码...', progress: 50 },
+            { state: 'coding', detail: '优化代码结构...', progress: 60 },
+            { state: 'debugging', detail: '修复发现的Bug...', progress: 70 },
+            { state: 'executing', detail: '运行测试脚本...', progress: 80 },
+            { state: 'testing', detail: '验证功能正常...', progress: 85 },
+            { state: 'presenting', detail: '展示成果给你看~', progress: 90 },
+            { state: 'answering', detail: '回答你的问题...', progress: 95 },
+            { state: 'chatting', detail: '还有其他问题吗？', progress: 98 },
+            { state: 'idle', detail: '任务完成，休息中~', progress: 100 }
+        ];
+
+        function toggleDemo() {
+            const btn = document.getElementById('demoBtn');
+            demoMode = !demoMode;
+
+            if (demoMode) {
+                btn.classList.add('active');
+                btn.textContent = '停止演示';
+                stopPolling(); // 停止后台轮询
+                demoStateIndex = 0;
+                runDemoStep();
+                demoInterval = setInterval(runDemoStep, 5000); // 每5秒切换状态
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '演示模式';
+                if (demoInterval) {
+                    clearInterval(demoInterval);
+                    demoInterval = null;
+                }
+                // 恢复正常轮询
+                resumePolling();
+                fetchStatus();
+            }
+        }
+
+        function runDemoStep() {
+            const step = DEMO_SEQUENCE[demoStateIndex];
+            updateState(step.state, step.detail, step.progress);
+
+            demoStateIndex = (demoStateIndex + 1) % DEMO_SEQUENCE.length;
+        }
+
+        // ========== 统计数据持久化 ==========
+        function saveStats() {
+            try {
+                localStorage.setItem('capyOfficeStats', JSON.stringify(stats));
+                localStorage.setItem('capyOfficeStatsDate', new Date().toDateString());
+            } catch (e) {}
+        }
+
+        function loadStats() {
+            try {
+                const savedDate = localStorage.getItem('capyOfficeStatsDate');
+                // 只恢复当天的统计
+                if (savedDate === new Date().toDateString()) {
+                    const saved = localStorage.getItem('capyOfficeStats');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        Object.assign(stats, parsed);
+                    }
+                } else {
+                    // 新的一天，清空统计
+                    localStorage.removeItem('capyOfficeStats');
+                }
+            } catch (e) {}
+        }
+
+        // 启动
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
