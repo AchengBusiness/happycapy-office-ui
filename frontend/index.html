@@ -41,6 +41,7 @@
     <div id="status-text">加载中...</div>
 
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+    <script src="images.js"></script>
     <script>
         const config = {
             type: Phaser.AUTO,
@@ -49,7 +50,10 @@
             parent: 'game-container',
             pixelArt: true,
             physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
-            scene: { preload: preload, create: create, update: update }
+            scene: { preload: preload, create: create, update: update },
+            loader: {
+                crossOrigin: 'anonymous'
+            }
         };
 
         const STATES = {
@@ -107,56 +111,92 @@
         const BUBBLE_INTERVAL = 8000;
         const TYPEWRITER_DELAY = 50;
 
+        // 纹理加载计数器
+        let texturesLoaded = 0;
+        const TOTAL_TEXTURES = 3;
+
         function preload() {
-            const timestamp = Date.now();
-            this.load.image('office_bg', `/static/office_bg.png?v=${timestamp}`);
-            this.load.image('capy_open', `/static/capybara_open.png?v=${timestamp}`);
-            this.load.image('capy_closed', `/static/capybara_closed.png?v=${timestamp}`);
+            const scene = this;
+
+            // 监听纹理加载完成事件
+            this.textures.on('addtexture', function(key) {
+                texturesLoaded++;
+                console.log('Loaded texture:', key, texturesLoaded + '/' + TOTAL_TEXTURES);
+            });
+
+            // 使用 base64 图片避免跨域问题
+            this.textures.addBase64('office_bg', IMG_OFFICE_BG);
+            this.textures.addBase64('capy_open', IMG_CAPY_OPEN);
+            this.textures.addBase64('capy_closed', IMG_CAPY_CLOSED);
         }
 
         function create() {
             gameInstance = this;
-            this.add.image(400, 300, 'office_bg');
+            const scene = this;
 
-            areas = {
-                workdesk: { x: 130, y: 235 },
-                breakroom: { x: 150, y: 500 },
-                meeting: { x: 420, y: 320 },
-                server: { x: 675, y: 220 },
-                library: { x: 680, y: 470 },
-                alert: { x: 150, y: 500 }
-            };
+            // 等待所有纹理加载完成后初始化场景
+            function initScene() {
+                scene.add.image(400, 300, 'office_bg');
 
-            // 创建水豚角色
-            capy = this.physics.add.sprite(150, 500, 'capy_open');
-            capy.setOrigin(0.5);
-            capy.setScale(1.2);
-            capy.setAlpha(1.0);
-            capy.setDepth(50);
+                areas = {
+                    workdesk: { x: 130, y: 235 },
+                    breakroom: { x: 150, y: 500 },
+                    meeting: { x: 420, y: 320 },
+                    server: { x: 675, y: 220 },
+                    library: { x: 680, y: 470 },
+                    alert: { x: 150, y: 500 }
+                };
 
-            // 牌匾
-            const plaqueBg = this.add.rectangle(400, 570, 420, 45, 0x8B4513);
-            plaqueBg.setStrokeStyle(4, 0xfbbf24);
-            plaqueBg.setDepth(80);
-            const plaqueText = this.add.text(400, 570, 'HappyCapy 豪华办公套间', {
-                font: 'bold 18px monospace',
-                fill: '#fbbf24',
-                stroke: '#000',
-                strokeThickness: 3
-            }).setOrigin(0.5).setDepth(81);
+                // 创建水豚角色
+                capy = scene.physics.add.sprite(150, 500, 'capy_open');
+                capy.setOrigin(0.5);
+                capy.setScale(1.2);
+                capy.setAlpha(1.0);
+                capy.setDepth(50);
 
-            statusText = document.getElementById('status-text');
+                // 牌匾
+                const plaqueBg = scene.add.rectangle(400, 570, 420, 45, 0x8B4513);
+                plaqueBg.setStrokeStyle(4, 0xfbbf24);
+                plaqueBg.setDepth(80);
+                const plaqueText = scene.add.text(400, 570, 'HappyCapy 豪华办公套间', {
+                    font: 'bold 18px monospace',
+                    fill: '#fbbf24',
+                    stroke: '#000',
+                    strokeThickness: 3
+                }).setOrigin(0.5).setDepth(81);
 
-            // 使用Phaser定时器进行眨眼（避免setTimeout泄漏）
-            this.time.addEvent({
-                delay: BLINK_INTERVAL,
-                callback: doBlink,
-                callbackScope: this,
-                loop: true
-            });
+                statusText = document.getElementById('status-text');
 
-            // 初始获取状态
-            fetchStatus();
+                // 使用Phaser定时器进行眨眼（避免setTimeout泄漏）
+                scene.time.addEvent({
+                    delay: BLINK_INTERVAL,
+                    callback: doBlink,
+                    callbackScope: scene,
+                    loop: true
+                });
+
+                // 初始获取状态
+                fetchStatus();
+
+                console.log('Scene initialized successfully');
+            }
+
+            // 检查纹理是否已全部加载
+            if (texturesLoaded >= TOTAL_TEXTURES) {
+                initScene();
+            } else {
+                // 等待纹理加载完成
+                const checkInterval = scene.time.addEvent({
+                    delay: 100,
+                    callback: function() {
+                        if (texturesLoaded >= TOTAL_TEXTURES) {
+                            checkInterval.remove();
+                            initScene();
+                        }
+                    },
+                    loop: true
+                });
+            }
         }
 
         function update(time) {

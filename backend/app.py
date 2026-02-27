@@ -100,6 +100,9 @@ def add_headers(response):
     response.headers['Access-Control-Allow-Origin'] = '*'
     response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    # Allow cross-origin for images (required for WebGL/Canvas)
+    response.headers['Cross-Origin-Resource-Policy'] = 'cross-origin'
+    response.headers['Cross-Origin-Embedder-Policy'] = 'credentialless'
     return response
 
 
