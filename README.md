@@ -43,7 +43,7 @@
 ### 方式一：一键安装（推荐）
 
 ```bash
-git clone https://github.com/acheng-byte/happycapy-office-ui.git
+git clone https://github.com/AchengBusiness/happycapy-office-ui.git
 cd happycapy-office-ui
 ./install.sh
 ```
@@ -192,4 +192,4 @@ MIT
 - [Star-Office-UI](https://github.com/ringhyacinth/Star-Office-UI) - 原始灵感来源
 - [Happycapy-skills](https://github.com/happycapy-ai/Happycapy-skills) - 更多 Claude 技能
 
-**仓库:** https://github.com/acheng-byte/happycapy-office-ui
+**仓库:** https://github.com/AchengBusiness/happycapy-office-ui
